@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="fr" data-motion="full">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VESPERIA — atlas des points froids · Paris</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+<link rel="stylesheet" href="css/style.css">
+<script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/deck.gl@9.3.3/dist.min.js"></script>
+</head>
+<body>
+<div id="map"></div>
+<header id="brand"><h1>VESPERIA</h1><p>ATLAS DES POINTS FROIDS · PARIS</p><p id="demo" hidden>DONNÉES SYNTHÉTIQUES DE DÉMONSTRATION</p></header>
+<section id="time">
+  <div id="clock">MAR 11:00</div>
+  <div id="controls">
+    <button id="btn-mode" type="button">TYPIQUE</button>
+    <button id="btn-now" type="button">MAINTENANT</button>
+    <button id="btn-play" type="button" aria-pressed="false">LECTURE</button>
+    <button id="listen" type="button" hidden>ÉCOUTE</button>
+  </div>
+</section>
+<aside id="panel-left">
+  <h2>RÉGLAGES</h2>
+  <div id="weights"></div>
+  <label id="iso-label"><input type="checkbox" id="toggle-isolated" checked> MASQUER LES ZONES ISOLÉES</label>
+  <p id="fx" hidden></p>
+</aside>
+<aside id="panel-right">
+  <h2>10 POINTS FROIDS</h2>
+  <ol id="top"></ol>
+</aside>
+<footer id="foot">
+  <div id="ribbon" tabindex="0" aria-label="Semaine, 168 heures"></div>
+  <div id="days"></div>
+  <a id="sources-link" href="#sources">SOURCES</a>
+</footer>
+<section id="sources" hidden></section>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

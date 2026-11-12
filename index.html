@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vesperia</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0d0d0d;
+      color: #e8e8e8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      line-height: 1.6;
+    }
+    h1 {
+      font-size: clamp(2.5rem, 8vw, 5rem);
+      font-weight: 700;
+      background: linear-gradient(135deg, #7e61d4 0%, #a855f7 50%, #d946ef 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+      letter-spacing: -0.02em;
+    }
+    .subtitle {
+      font-size: clamp(1rem, 3vw, 1.5rem);
+      color: #9ca3af;
+      margin-bottom: 2rem;
+      max-width: 600px;
+      text-align: center;
+    }
+    .badge {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background: rgba(126, 97, 212, 0.15);
+      border: 1px solid rgba(126, 97, 212, 0.3);
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      color: #c4b5fd;
+      margin-bottom: 2rem;
+    }
+    .links {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .links a {
+      color: #7e61d4;
+      text-decoration: none;
+      padding: 0.75rem 1.5rem;
+      border: 1px solid #7e61d4;
+      border-radius: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    .links a:hover {
+      background: #7e61d4;
+      color: #0d0d0d;
+    }
+    footer {
+      margin-top: 3rem;
+      font-size: 0.75rem;
+      color: #4b5563;
+    }
+  </style>
+</head>
+<body>
+  <h1>Vesperia</h1>
+  <p class="subtitle">Phase 0 — Public repository with GitHub Pages deployed via workflow</p>
+  <span class="badge">Deployed by GitHub Actions</span>
+  <div class="links">
+    <a href="https://github.com/andyqwartz/vesperia" target="_blank" rel="noopener">Repository</a>
+    <a href="https://github.com/andyqwartz/vesperia/actions" target="_blank" rel="noopener">Workflows</a>
+  </div>
+  <footer>MIT License — <a href="https://github.com/andyqwartz/vesperia" style="color: inherit;">andyqwartz</a></footer>
+</body>
+</html>

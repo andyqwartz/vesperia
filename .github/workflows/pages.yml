@@ -1,0 +1,76 @@
+# Workflow Vesperia — FICHIER FOURNI (règle R2) : ne jamais le modifier.
+# Construit les données (fixture ou réel selon pipeline/MODE), teste, puis déploie site/ sur GitHub Pages.
+name: pages
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Dépendances Python
+        run: pip install -r pipeline/requirements.txt
+      - name: Tests dorés
+        run: |
+          MODE=$(cat pipeline/MODE 2>/dev/null || echo fixture)
+          if [ "$MODE" = "real" ]; then python -m pytest; else python -m pytest -m phase1; fi
+      - name: Données
+        run: |
+          MODE=$(cat pipeline/MODE 2>/dev/null || echo fixture)
+          echo "mode des données : $MODE"
+          python pipeline/run.py --mode "$MODE" --out site/data
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Dépendances Node
+        run: npm ci
+      - name: Navigateur de test
+        run: npx playwright install --with-deps chromium
+      - name: Test de fumée
+        run: node scripts/smoke.mjs --site site --base /vesperia/
+      - name: Maintien du dépôt actif (cron désactivé après 60 jours sans commit)
+        if: github.event_name == 'schedule'
+        run: |
+          last=$(git log -1 --format=%ct)
+          now=$(date +%s)
+          if [ $(( (now - last) / 86400 )) -ge 45 ]; then
+            git config user.name "vesperia-bot"
+            git config user.email "vesperia-bot@users.noreply.github.com"
+            git commit --allow-empty -m "maintien : dépôt actif"
+            git push
+          fi
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,8 @@
+{
+  "name": "vesperia",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Atlas des points froids de Paris",
+  "scripts": { "smoke": "node scripts/smoke.mjs --site site --base /vesperia/" },
+  "devDependencies": { "playwright": "1.63.0" }
+}

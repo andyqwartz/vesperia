@@ -1,0 +1,9 @@
+memory-bank/
+BRIEF.md
+.venv/
+node_modules/
+pipeline/cache/
+site/data/
+__pycache__/
+*.pyc
+.DS_Store

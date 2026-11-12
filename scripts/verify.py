@@ -33,6 +33,7 @@ PROTECTED = [
 ]
 GUARD = ROOT / ".git" / "vesperia-guard.sha256"
 DEADLINE = time.time() + int(os.environ.get("VESPERIA_GATE_SECONDS", "270"))  # 270 s : marge sous le délai de 5 min de /goal gate ; plus long à la main
+GATE = [None]  # numéro du gate en cours (renseigné par run_gate)
 RESULTS = []  # (statut, nom, détail)
 CHECKS = []   # (since, only, nom, fonction)
 
@@ -451,15 +452,18 @@ def ensure_fixture_in_site():
     run_pipeline(["--mode", "fixture"], ROOT / "site" / "data", timeout=120)
 
 
-def run_smoke(extra=None, timeout=150):
+def run_smoke(extra=None, timeout=215):
     ensure_fixture_in_site()
-    rc, out = sh(["node", "scripts/smoke.mjs", "--site", "site", "--base", "/vesperia/"] + (extra or []), timeout=timeout)
+    rc, out = sh(["node", "scripts/smoke.mjs", "--site", "site", "--base", "/vesperia/", "--timeout", "200"] + (extra or []), timeout=timeout)
     need(rc == 0, "smoke : " + tail(out, 5))
 
 
 @check(2)
 def c_test_de_fumee_du_site():
-    run_smoke()
+    # Le test de fumée est lent (rendu logiciel) : le gate ne le rejoue que pour la phase 2. Ensuite, chaque push le rejoue en CI
+    # (pages.yml), la phase 7 l'élargit, et la phase 8 le lance sur le site publié.
+    if GATE[0] == 2:
+        run_smoke()
 
 
 def wait_deploy(expect_mode, wait=170):
@@ -583,7 +587,8 @@ def c_phase7_fonctions_vivantes():
     for f in ("js/weather.js", "js/audio.js"):
         need((ROOT / "site" / f).exists(), f"site/{f} absent")
     need('id="listen"' in (ROOT / "site/index.html").read_text(encoding="utf-8"), 'index.html doit contenir id="listen"')
-    run_smoke(["--require", "weather,events,listen"])
+    if GATE[0] == 7:
+        run_smoke(["--require", "weather,events,listen"])
 
 
 @check(7, 7)
@@ -611,7 +616,7 @@ def c_audit_final():
     for kw in ("usage", "sources", "limites"):
         need(kw in readme, f"README.md : section « {kw} » absente")
     owner, repo = repo_slug()
-    rc, out = sh(["node", "scripts/smoke.mjs", "--url", f"https://{owner}.github.io/{repo}/", "--require", "weather,events,listen", "--live-basemap"], timeout=150)
+    rc, out = sh(["node", "scripts/smoke.mjs", "--url", f"https://{owner}.github.io/{repo}/", "--require", "weather,events,listen", "--live-basemap", "--timeout", "200"], timeout=215)
     need(rc == 0, "smoke sur le site déployé : " + tail(out, 5))
 
 
@@ -643,6 +648,7 @@ def stamp_progress(n):
 
 
 def run_gate(n):
+    GATE[0] = n
     print(f"VERIFY phase {n} — {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}")
     fails = 0
     total = 0

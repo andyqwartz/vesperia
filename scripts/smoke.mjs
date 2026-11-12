@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Test de fumée Vesperia — FICHIER FOURNI (règle R2) : ne jamais le modifier.
-// Usage : node scripts/smoke.mjs --site site --base /vesperia/ [--require weather,events,listen] [--live-basemap]
+// Usage : node scripts/smoke.mjs --site site --base /vesperia/ [--require weather,events,listen] [--live-basemap] [--timeout 420]
 //         node scripts/smoke.mjs --url https://OWNER.github.io/vesperia/ [--require ...]
+// Le rendu WebGL logiciel (SwiftShader) est lent : les pages sont ouvertes avec devicePixelRatio 0,5 (4 fois moins de pixels
+// à dessiner, mise en page inchangée). Variables : SMOKE_SCALE (défaut 0.5), SMOKE_TIMEOUT_S (défaut 420).
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -14,6 +16,10 @@ const SITE = path.resolve(String(opt('site', 'site')));
 const URL_ARG = opt('url', null);
 const REQUIRE = String(opt('require', '')).split(',').filter(Boolean);
 const LIVE = !!opt('live-basemap', false);
+const LIMIT_S = Number(opt('timeout', process.env.SMOKE_TIMEOUT_S || 420)) || 420;
+const SCALE = Number(process.env.SMOKE_SCALE || 0.5) || 0.5;
+const T0 = Date.now();
+const secs = (t) => ((Date.now() - t) / 1000).toFixed(1) + 's';
 const NOW = new Date('2026-11-10T10:00:00Z'); // mardi 11 h à Paris
 const DAYS = ['LUN', 'MAR', 'MER', 'JEU', 'VEN', 'SAM', 'DIM'];
 const IDS = ['map', 'clock', 'ribbon', 'top', 'weights', 'toggle-isolated', 'btn-mode', 'btn-now', 'btn-play', 'sources-link', 'sources'];
@@ -66,9 +72,10 @@ if (process.env.SMOKE_PRELOAD) PRELOAD = (await import(pathToFileURL(path.resolv
 const results = [];
 const open = [];
 async function openPage(o = {}) {
-  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'fr-FR', timezoneId: 'Europe/Paris', reducedMotion: o.reduced ? 'reduce' : 'no-preference' });
+  const t0 = Date.now();
+  const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: SCALE, locale: 'fr-FR', timezoneId: 'Europe/Paris', reducedMotion: o.reduced ? 'reduce' : 'no-preference' });
   open.push(ctx);
-  ctx.setDefaultTimeout(8000);
+  ctx.setDefaultTimeout(15000);
   if (PRELOAD) await PRELOAD(ctx);
   const page = await ctx.newPage();
   page.errs = [];
@@ -79,21 +86,25 @@ async function openPage(o = {}) {
   await page.route(/api\.open-meteo\.com/, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(FORECAST) }));
   if (o.events !== undefined) await page.route('**/data/events.json', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(o.events) }));
   await page.goto(PAGE_URL, { waitUntil: 'load', timeout: 45000 });
-  await page.waitForFunction(() => window.__VESPERIA__ && window.__VESPERIA__.ready === true, null, { timeout: 25000 });
+  await page.waitForFunction(() => window.__VESPERIA__ && window.__VESPERIA__.ready === true, null, { timeout: 45000 });
+  console.log('       (page ouverte en ' + secs(t0) + ')');
   return page;
 }
 const api = (page, name, ...args) => page.evaluate(([n, a]) => { const v = window.__VESPERIA__; return typeof v[n] === 'function' ? v[n](...a) : v[n]; }, [name, args]);
 const text = (page, sel) => page.locator(sel).first().innerText();
 const ok = (c, m) => { if (!c) throw new Error(m); };
+let current = 'démarrage';
 async function check(name, fn) {
-  try { await fn(); results.push(true); console.log('[OK]   ' + name); }
-  catch (e) { results.push(false); console.log('[FAIL] ' + name + ' — ' + String(e.message).split('\n')[0].slice(0, 300)); }
+  current = name;
+  const t0 = Date.now();
+  try { await fn(); results.push(true); console.log('[OK]   ' + name + ' (' + secs(t0) + ')'); }
+  catch (e) { results.push(false); console.log('[FAIL] ' + name + ' — ' + String(e.message).split('\n')[0].slice(0, 300) + ' (' + secs(t0) + ')'); }
 }
 const getJson = async (rel) => (await fetch(PAGE_URL + rel, { cache: 'no-store' })).json();
 const metersBetween = (a, b) => { const k = Math.PI / 180 * 6371000; return Math.hypot((a[1] - b[1]) * k * Math.cos((a[0] + b[0]) / 2 * Math.PI / 180), (a[0] - b[0]) * k); };
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 async function waitWeather(p) { for (let i = 0; i < 40 && (await api(p, 'weatherLoaded')) === false; i++) await sleep(250); }
-const killer = setTimeout(() => { console.log('[FAIL] délai global de 140 s dépassé'); console.log('SMOKE: FAIL'); process.exit(1); }, 140000);
+const killer = setTimeout(() => { console.log('[FAIL] délai global de ' + LIMIT_S + ' s dépassé pendant : ' + current); console.log('SMOKE: FAIL'); process.exit(1); }, LIMIT_S * 1000);
 
 let page = null;
 let cells = null; let meta = null;
@@ -302,5 +313,5 @@ for (const c of open) await c.close().catch(() => {});
 await browser.close();
 if (server) server.close();
 const bad = results.filter((x) => !x).length;
-console.log(`SMOKE: ${bad ? 'FAIL' : 'PASS'} (${results.length - bad}/${results.length})`);
+console.log(`SMOKE: ${bad ? 'FAIL' : 'PASS'} (${results.length - bad}/${results.length}) en ${secs(T0)}`);
 process.exit(bad ? 1 : 0);

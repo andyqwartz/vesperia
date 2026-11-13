@@ -1,8 +1,16 @@
 // hud.js — heure en toutes lettres, semaine-spectrogramme, fenêtres de silence, dérive, réglages, fondement.
 import { SRC } from './state.js';
+import { ABOUT } from './about.js';
 
 const $ = (id) => document.getElementById(id);
 const LABEL = { road: 'voirie', bike: 'vélo', rail: 'métro', poi: 'commerces' };
+const UNIT = { road: 'capteurs routiers', bike: 'compteurs vélo', rail: 'accès au réseau ferré', poi: 'lieux recensés' };
+const DESC = {
+  road: 'Trafic automobile : débit horaire moyen des capteurs de comptage routier de la Ville, sur les 14 derniers jours.',
+  bike: 'Passages de vélos : comptages horaires des compteurs vélo permanents, sur les 28 derniers jours.',
+  rail: 'Métro, RER et tram : densité des stations et entrées, rythmée par la part horaire des validations (IDFM).',
+  poi: 'Commerces, bureaux, écoles, lieux de culte (OpenStreetMap), animés selon des horaires types par catégorie.',
+};
 const DAYS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
 const HOURS = ['minuit', 'une heure', 'deux heures', 'trois heures', 'quatre heures', 'cinq heures', 'six heures', 'sept heures',
   'huit heures', 'neuf heures', 'dix heures', 'onze heures', 'midi', 'treize heures', 'quatorze heures', 'quinze heures',
@@ -41,7 +49,10 @@ export function initHud(model, { view, meta, cells }) {
 
   $('ribbon').innerHTML = Array.from({ length: 168 }, (_, i) => `<div data-i="${i}"${i % 24 ? '' : ' class="day"'}><i></i></div>`).join('');
   $('days').innerHTML = DAYS.map((d) => `<span>${d}</span>`).join('');
-  $('weights').innerHTML = SRC.map((s) => `<label><span>${LABEL[s]}</span><output></output><input type="range" min="0" max="100" data-src="${s}"></label>`).join('');
+  const nIn = Object.fromEntries((meta.sources || []).map((x) => [x.id, x.n_inputs]));
+  $('weights').innerHTML = SRC.map((s) => `<label><span>${LABEL[s]}</span><output></output><input type="range" min="0" max="100" data-src="${s}">`
+    + `<small class="desc">${DESC[s]}${nIn[s] ? ` ${nIn[s].toLocaleString('fr-FR')} ${UNIT[s]}.` : ''}</small></label>`).join('');
+  $('about').innerHTML = ABOUT;
   $('sources').innerHTML = '<p class="h">fondement</p>'
     + '<p class="lead">Une carte officielle montre ce que l\'autorité juge utile : axes, commerces, monuments. Vesperia montre l\'inverse, les lieux et les heures où la ville se relâche.</p>'
     + '<p>L\'indice est un a priori statistique construit à partir de données ouvertes agrégées ; il ne voit aucune personne, ne suit personne, ne descend pas sous terre.</p>'
@@ -65,6 +76,7 @@ export function initHud(model, { view, meta, cells }) {
   $('btn-tune').addEventListener('click', () => {
     const p = $('panel-left'); p.classList.toggle('open');
     $('btn-tune').setAttribute('aria-expanded', String(p.classList.contains('open')));
+    $('btn-tune').textContent = p.classList.contains('open') ? 'FERMER LES RÉGLAGES' : 'RÉGLAGES';
   });
   const themeLabel = () => { $('btn-theme').textContent = document.documentElement.dataset.theme === 'light' ? 'SOMBRE' : 'CLAIR'; };
   themeLabel();
@@ -93,6 +105,9 @@ export function initHud(model, { view, meta, cells }) {
       <button type="button" data-close>fermer</button>`;
   });
   $('derive').addEventListener('click', (e) => { if (e.target.dataset.close !== undefined) { $('derive').hidden = true; view.focus(-1); } });
+  const about = (on = $('about').hidden) => { $('about').hidden = !on; $('btn-info').setAttribute('aria-expanded', String(on)); };
+  $('btn-info').addEventListener('click', () => about());
+  $('about').addEventListener('click', (e) => { if (e.target.dataset.close !== undefined) about(false); });
   $('sources-link').addEventListener('click', (e) => { e.preventDefault(); $('sources').hidden = !$('sources').hidden; });
   $('top').addEventListener('click', (e) => { const li = e.target.closest('li'); if (li) view.fly(Number(li.dataset.k)); });
   $('top').addEventListener('pointerover', (e) => { const li = e.target.closest('li'); view.focus(li ? Number(li.dataset.k) : -1); });
@@ -102,7 +117,8 @@ export function initHud(model, { view, meta, cells }) {
     const d = { ArrowRight: 1, ArrowLeft: -1, ArrowUp: 24, ArrowDown: -24 }[e.key];
     if (d) { e.preventDefault(); model.setIndex(m.index + d); return; }
     if (e.key === ' ' && (e.target === document.body || e.target.id === 'ribbon')) { e.preventDefault(); play(); return; }
-    const b = { d: 'btn-derive', o: 'btn-official', r: 'btn-tune', t: 'btn-theme' }[e.key];
+    if (e.key === 'Escape') { about(false); $('derive').hidden = true; $('sources').hidden = true; return; }
+    const b = { d: 'btn-derive', o: 'btn-official', r: 'btn-tune', t: 'btn-theme', i: 'btn-info' }[e.key];
     if (b && !e.metaKey && !e.ctrlKey) $(b).click();
   });
 

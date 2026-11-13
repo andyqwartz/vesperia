@@ -18,7 +18,7 @@
 <div id="map"></div>
 <div id="grain"></div>
 <header id="brand">
-  <h1>Vesperia</h1>
+  <h1>Vesperia <button id="btn-info" type="button" aria-label="Philosophie du projet" aria-expanded="false">i</button></h1>
   <p>contre-carte des silences urbains · paris</p>
   <p id="demo" hidden>données synthétiques de démonstration</p>
 </header>
@@ -39,8 +39,13 @@
   </nav>
 </section>
 <aside id="panel-left">
+  <div id="tune-intro">
+    <p class="h">réglages de l'indice</p>
+    <p>Le froid d'un lieu est l'inverse de son activité. Quatre mesures la composent ; chaque curseur fixe la part de l'une d'elles dans le calcul. À 0, la mesure est ignorée ; seules les proportions entre curseurs comptent. La carte et les fenêtres de silence se recalculent aussitôt.</p>
+  </div>
   <div id="weights"></div>
   <label id="iso-label"><input type="checkbox" id="toggle-isolated" checked> masquer les zones isolées</label>
+  <p class="desc">Lieux à plus de 250 m de tout arrêt de transport : froids par construction plutôt que par l'heure.</p>
 </aside>
 <aside id="panel-right">
   <h2>fenêtres de silence</h2>
@@ -55,6 +60,7 @@
   <a id="sources-link" href="#sources">fondement &amp; sources</a>
 </footer>
 <section id="sources" hidden></section>
+<section id="about" hidden></section>
 <script type="module" src="js/app.js"></script>
 </body>
 </html>

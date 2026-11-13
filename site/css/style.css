@@ -48,8 +48,30 @@ body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-in
 #fx { margin: 6px 0 0; font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); }
 
 /* tuning: hairline sliders that appear on demand */
-#panel-left { top: 112px; left: 36px; width: 240px; opacity: .45; transition: opacity .3s; }
-#panel-left:hover, #panel-left.open, #panel-left:focus-within { opacity: 1; }
+#panel-left { top: 112px; left: 36px; width: 250px; opacity: .55; transition: opacity .3s, background .3s; padding: 0; }
+#panel-left:hover, #panel-left:focus-within { opacity: 1; }
+#panel-left .desc, #tune-intro { display: none; }
+#panel-left.open { z-index: 7; opacity: 1; width: 330px; padding: 16px 18px; background: var(--bg); border-top: 1px solid var(--cyan); max-height: calc(100vh - 220px); overflow: auto; }
+#panel-left.open .desc { display: block; margin: 4px 0 0; font-size: 10px; line-height: 1.5; letter-spacing: .02em; text-transform: none; color: var(--mute); grid-column: 1 / 3; }
+#panel-left.open #tune-intro { display: block; margin-bottom: 16px; font: italic 400 15px/1.4 var(--serif); color: var(--ink); }
+#tune-intro p { margin: 0; }
+#tune-intro .h { margin: 0 0 8px; font: 300 9px var(--mono); letter-spacing: .28em; text-transform: uppercase; color: var(--cyan); }
+#btn-info { margin-left: 8px; width: 20px; height: 20px; border: 1px solid var(--mute); border-radius: 50%; font: italic 400 13px/18px var(--serif); color: var(--ink); vertical-align: 6px; text-align: center; }
+#btn-info:hover, #btn-info[aria-expanded="true"] { border-color: var(--cyan); color: var(--cyan); }
+#about { position: fixed; z-index: 8; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(660px, 92vw); max-height: 84vh; overflow: auto;
+  padding: 30px 36px; background: var(--bg); border-top: 1px solid var(--cyan); box-shadow: 0 0 0 100vmax color-mix(in srgb, var(--bg) 55%, transparent); font: 400 16px/1.5 var(--serif); color: var(--ink); }
+#about[hidden] { display: none; }
+#about h2 { margin: 0 0 14px; font: italic 400 40px/1.05 var(--serif); color: var(--ink); }
+#about .h { margin: 18px 0 8px; font: 300 9px var(--mono); letter-spacing: .28em; text-transform: uppercase; color: var(--cyan); }
+#about .h:first-child { margin-top: 0; }
+#about p { margin: 0 0 12px; max-width: 64ch; }
+#about .lead { font: italic 400 20px/1.4 var(--serif); color: var(--ink); }
+#about ul { margin: 0 0 12px; padding-left: 16px; }
+#about li { margin-bottom: 6px; color: var(--mute); }
+#about b { font-weight: 400; color: var(--ink); }
+#about .sign { margin-top: 18px; font: italic 400 20px/1.3 var(--serif); color: var(--ice); }
+#about button { font: 300 10px var(--mono); letter-spacing: .26em; text-transform: uppercase; color: var(--mute); }
+#about button:hover { color: var(--ink); }
 #weights label { display: grid; grid-template-columns: 1fr auto; font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--mute); margin-bottom: 14px; }
 #weights output { color: var(--ink); }
 #weights input { grid-column: 1 / 3; -webkit-appearance: none; appearance: none; width: 100%; height: 14px; margin: 4px 0 0; background: transparent; }

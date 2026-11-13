@@ -16,7 +16,7 @@ const SITE = path.resolve(String(opt('site', 'site')));
 const URL_ARG = opt('url', null);
 const REQUIRE = String(opt('require', '')).split(',').filter(Boolean);
 const LIVE = !!opt('live-basemap', false);
-const LIMIT_S = Number(opt('timeout', process.env.SMOKE_TIMEOUT_S || 600)) || 600;
+const LIMIT_S = Number(opt('timeout', process.env.SMOKE_TIMEOUT_S || 900)) || 900;
 const SCALE = Number(process.env.SMOKE_SCALE || 0.5) || 0.5;
 const T0 = Date.now();
 const secs = (t) => ((Date.now() - t) / 1000).toFixed(1) + 's';

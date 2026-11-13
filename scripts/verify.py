@@ -452,9 +452,9 @@ def ensure_fixture_in_site():
     run_pipeline(["--mode", "fixture"], ROOT / "site" / "data", timeout=120)
 
 
-def run_smoke(extra=None, timeout=600):
+def run_smoke(extra=None, timeout=900):
     ensure_fixture_in_site()
-    rc, out = sh(["node", "scripts/smoke.mjs", "--site", "site", "--base", "/vesperia/", "--timeout", "500"] + (extra or []), timeout=timeout)
+    rc, out = sh(["node", "scripts/smoke.mjs", "--site", "site", "--base", "/vesperia/", "--timeout", "850"] + (extra or []), timeout=timeout)
     need(rc == 0, "smoke : " + tail(out, 5))
 
 

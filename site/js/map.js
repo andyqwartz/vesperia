@@ -31,12 +31,11 @@ export function createMap({ style, cells, reduced, onHover, theme = 'dark' }) {
   map.addControl(overlay);
   const rows = cells.h.map((_, k) => ({ k, p: [cells.lon[k], cells.lat[k]], c: [0, 0, 0], v: 0 }));
   const loaded = new Promise((res) => { map.once('load', res); setTimeout(res, 8000); });
-  let stamp = 0; let t = 0; let focus = -1; let marks = []; let cur = null;
+  let stamp = 0; let focus = -1; let marks = []; let cur = null;
 
   function draw() {
     const light = theme === 'light'; const gain = light ? 1.7 : 1;
-    const layers = LAYERS.map(([id, r, a0, minV, maxPx], j) => { const a = Math.min(1, a0 * gain); return new deck.ScatterplotLayer({
-      radiusScale: reduced ? 1 : 1 + 0.1 * Math.sin(t * 0.0011 + j * 1.7),
+    const layers = LAYERS.map(([id, r, a0, minV, maxPx]) => { const a = Math.min(1, a0 * gain); return new deck.ScatterplotLayer({
       id, data: rows, getPosition: (d) => d.p, radiusUnits: 'meters', radiusMaxPixels: maxPx, parameters: light ? NORMAL : ADD,
       pickable: id === 'halo', onHover: id === 'halo' ? onHover : undefined,
       onClick: id === 'halo' ? (i) => i.object && api.fly(i.object.k) : undefined,
@@ -55,15 +54,6 @@ export function createMap({ style, cells, reduced, onHover, theme = 'dark' }) {
     overlay.setProps({ layers });
   }
 
-  // lent souffle des lumières (uniforme GPU, rien n'est recalculé), ~3 images/s ; coupé si mouvement réduit ou onglet caché
-  if (!reduced) {
-    let last = 0;
-    const loop = (now) => {
-      if (now - last > 320 && !document.hidden) { t = now; last = now; draw(); }
-      requestAnimationFrame(loop);
-    };
-    requestAnimationFrame(loop);
-  }
 
   const api = {
     map, loaded,

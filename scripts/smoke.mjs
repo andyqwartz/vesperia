@@ -237,11 +237,15 @@ await check('aucune requête en erreur ni erreur JS pendant tout le parcours', a
 });
 
 await check('mouvement réduit : ni lecture automatique ni transitions', async () => {
+  // SwiftShader : une page WebGL encore ouverte affame la suivante en CI ; on ferme d'abord les précédentes.
+  for (const c of open.splice(0)) await c.close().catch(() => {});
   const p = await openPage({ reduced: true });
   ok(await p.evaluate(() => document.documentElement.dataset.motion) === 'reduced', 'html[data-motion] doit valoir reduced');
   const i0 = await api(p, 'index'); await sleep(1200);
   ok(await api(p, 'index') === i0, 'l\'index bouge sans action de l\'utilisateur');
   ok(p.errs.length === 0, p.errs[0]);
+  await p.context().close().catch(() => {});
+  if (REQUIRE.includes('weather') || REQUIRE.includes('events')) page = await openPage();
 });
 
 if (REQUIRE.includes('weather') || REQUIRE.includes('events')) {

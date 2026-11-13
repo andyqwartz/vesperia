@@ -66,6 +66,14 @@ export function initHud(model, { view, meta, cells }) {
     const p = $('panel-left'); p.classList.toggle('open');
     $('btn-tune').setAttribute('aria-expanded', String(p.classList.contains('open')));
   });
+  const themeLabel = () => { $('btn-theme').textContent = document.documentElement.dataset.theme === 'light' ? 'SOMBRE' : 'CLAIR'; };
+  themeLabel();
+  $('btn-theme').addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('vesperia-theme', next); } catch (e) { /* stockage indisponible */ }
+    view.setTheme(next); themeLabel();
+  });
   $('btn-official').addEventListener('click', () => {
     const on = $('btn-official').getAttribute('aria-pressed') !== 'true';
     $('btn-official').setAttribute('aria-pressed', String(on)); view.official(on);
@@ -94,7 +102,7 @@ export function initHud(model, { view, meta, cells }) {
     const d = { ArrowRight: 1, ArrowLeft: -1, ArrowUp: 24, ArrowDown: -24 }[e.key];
     if (d) { e.preventDefault(); model.setIndex(m.index + d); return; }
     if (e.key === ' ' && (e.target === document.body || e.target.id === 'ribbon')) { e.preventDefault(); play(); return; }
-    const b = { d: 'btn-derive', o: 'btn-official', r: 'btn-tune' }[e.key];
+    const b = { d: 'btn-derive', o: 'btn-official', r: 'btn-tune', t: 'btn-theme' }[e.key];
     if (b && !e.metaKey && !e.ctrlKey) $(b).click();
   });
 

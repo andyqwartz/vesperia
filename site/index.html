@@ -7,7 +7,9 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/instrument-serif@5.3.0/400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/instrument-serif@5.3.0/400-italic.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.3.0/200.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/jetbrains-mono@5.3.0/300.css">
+<script>document.documentElement.dataset.theme = localStorage.getItem('vesperia-theme') || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');</script>
 <link rel="stylesheet" href="css/style.css">
 <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/deck.gl@9.3.3/dist.min.js"></script>
@@ -21,8 +23,8 @@
   <p id="demo" hidden>données synthétiques de démonstration</p>
 </header>
 <section id="time">
-  <div id="clock-words">mardi, <em>onze heures</em></div>
   <div id="clock">MAR 11:00</div>
+  <div id="clock-words">mardi, <em>onze heures</em></div>
   <div id="pulse"><span id="mean">—</span> froid moyen · <span id="lit">—</span> cellules allumées</div>
   <p id="fx" hidden></p>
   <nav id="controls">
@@ -32,6 +34,7 @@
     <button id="btn-derive" type="button">DÉRIVE</button>
     <button id="btn-official" type="button" aria-pressed="false">CARTE OFFICIELLE</button>
     <button id="btn-tune" type="button" aria-expanded="false">RÉGLAGES</button>
+    <button id="btn-theme" type="button">CLAIR</button>
     <button id="listen" type="button" hidden>ÉCOUTE</button>
   </nav>
 </section>

@@ -1,9 +1,9 @@
-// app.js — assemble le modèle, la carte et l'interface, puis expose window.__VESPERIA__ (contrat §2.7).
+// app.js — assemble le modèle, la contre-carte et l'interface, puis expose window.__VESPERIA__ (contrat §2.7).
 import { loadData } from './data.js';
 import { createModel } from './state.js';
 import { loadStyle } from './basemap.js';
 import { createMap } from './map.js';
-import { initHud, renderHud } from './hud.js';
+import { initHud } from './hud.js';
 
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 document.documentElement.dataset.motion = reduced ? 'reduced' : 'full';
@@ -13,9 +13,10 @@ const model = createModel(data);
 model.cells = data.cells;
 model.now();
 const { style, kind } = await loadStyle();
-const view = createMap({ style, cells: data.cells, reduced });
-initHud(model, { fly: view.fly, meta: data.meta });
-const paint = () => { renderHud(model); view.update(model.frame(), model.activeEvents()); };
+let hud = null;
+const view = createMap({ style, cells: data.cells, reduced, onHover: (i) => hud && hud.hover(i) });
+hud = initHud(model, { view, meta: data.meta, cells: data.cells });
+const paint = () => hud.render(view.update(model.frame(), model.activeEvents()));
 model.subscribe(paint);
 paint();
 await view.loaded;

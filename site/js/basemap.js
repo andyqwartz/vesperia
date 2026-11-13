@@ -1,45 +1,28 @@
-// basemap.js — style OpenFreeMap « liberty » recoloré en JSON (direction artistique NÉGATIF, §2.8).
+// basemap.js — contre-carte : seule l'eau reste ; la carte officielle (axes, repères) est gardée cachée, révélable.
 const STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
-const BG = '#05070d';
+const BG = '#020306';
+const OFFICIAL = '#c9a46a';
+const bg = { id: 'background', type: 'background', paint: { 'background-color': BG } };
 
 function fallbackStyle() {
-  return { version: 8, sources: {}, layers: [{ id: 'background', type: 'background', paint: { 'background-color': BG } }] };
+  return { version: 8, sources: {}, layers: [bg] };
 }
 
-function recolor(style) {
-  style.layers = style.layers.map((l) => {
-    const id = l.id.toLowerCase();
-    const layout = { ...(l.layout || {}) };
-    const paint = { ...(l.paint || {}) };
-    const hide = () => ({ ...l, layout: { ...layout, visibility: 'none' } });
-    if (l.type === 'background') return { ...l, paint: { 'background-color': BG } };
-    if (l.type === 'symbol') {
-      if (!id.includes('place')) return hide();
-      paint['text-color'] = '#5a6478';
-      paint['text-halo-width'] = 0;
-      return { ...l, layout, paint };
-    }
-    if (l.type === 'fill' || l.type === 'fill-extrusion') {
-      if (/building|boundary/.test(id)) return hide();
-      delete paint['fill-pattern'];
-      delete paint['fill-outline-color'];
-      if (l.type === 'fill-extrusion') return hide();
-      paint['fill-color'] = id.includes('water') ? '#02040a' : '#070b14';
-      return { ...l, layout, paint };
-    }
-    if (l.type === 'line') {
-      if (/boundary|admin/.test(id)) return hide();
-      if (/road|street|bridge|tunnel|rail|highway|motorway|path|transit|ferry|aeroway/.test(id)) {
-        delete paint['line-pattern'];
-        delete paint['line-gradient'];
-        paint['line-color'] = '#1b2438';
-        paint['line-opacity'] = 0.8;
-        return { ...l, layout, paint };
-      }
-      return hide();
-    }
-    return hide();
-  });
+function counterMap(style) {
+  const water = style.layers.filter((l) => l.id === 'water' || l.id === 'waterway_river').map((l) => (l.type === 'fill'
+    ? { ...l, paint: { 'fill-color': '#0a1424' } }
+    : { ...l, paint: { 'line-color': '#0f1a2e', 'line-width': 0.6 } }));
+  const roads = style.layers
+    .filter((l) => l.type === 'line' && /^(road|bridge)_(motorway|trunk|secondary|minor)/.test(l.id) && !/casing/.test(l.id))
+    .map((l) => ({ ...l, id: `off-${l.id}`, layout: { ...l.layout, visibility: 'none' },
+      paint: { 'line-color': OFFICIAL, 'line-opacity': 0.22, 'line-width': 0.7 } }));
+  const labels = style.layers
+    .filter((l) => /^(poi_r1|poi_r7|poi_transit|label_city|highway-name-major)$/.test(l.id))
+    .map((l) => ({ ...l, id: `off-${l.id}`,
+      layout: { ...l.layout, visibility: 'none', 'icon-image': '', 'text-font': ['Noto Sans Regular'], 'text-size': 10,
+        'text-transform': 'uppercase', 'text-letter-spacing': 0.2 },
+      paint: { 'text-color': OFFICIAL, 'text-opacity': 0.55, 'text-halo-width': 0 } }));
+  style.layers = [bg, ...water, ...roads, ...labels];
   return style;
 }
 
@@ -47,7 +30,7 @@ export async function loadStyle() {
   try {
     const r = await fetch(STYLE_URL);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return { style: recolor(await r.json()), kind: 'styled' };
+    return { style: counterMap(await r.json()), kind: 'styled' };
   } catch (e) {
     return { style: fallbackStyle(), kind: 'fallback' };
   }

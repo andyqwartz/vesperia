@@ -1,61 +1,83 @@
-// map.js — carte MapLibre + colonnes deck.gl (direction artistique NÉGATIF, §2.8).
-const STOPS = [[55, [0x16, 0x24, 0x4a], 0.35], [70, [0x2f, 0x6b, 0xff], 0.70], [85, [0x7f, 0xe3, 0xff], 0.90], [100, [255, 255, 255], 1.0]];
+// map.js — champ lumineux : chaque cellule froide est une lumière additive, relative à l'heure affichée.
+const RAMP = [[55, [22, 30, 90]], [70, [47, 107, 255]], [85, [127, 227, 255]], [100, [255, 255, 255]]];
+const ADD = { blend: true, blendColorOperation: 'add', blendColorSrcFactor: 'src-alpha', blendColorDstFactor: 'one',
+  blendAlphaOperation: 'add', blendAlphaSrcFactor: 'one', blendAlphaDstFactor: 'one', depthCompare: 'always', depthWriteEnabled: false };
+// id, rayon (m), opacité, seuil d'intensité, rayon max (px)
+const LAYERS = [['haze', 560, 0.035, 0.2, 70], ['glow', 260, 0.08, 0.1, 34], ['halo', 120, 0.22, 0.03, 16], ['core', 36, 0.9, 0.3, 5]];
 
-export function coldColor(f, eligible) {
-  if (f < 55) return [0, 0, 0, 0];
-  let lo = STOPS[0];
-  let hi = STOPS[1];
-  for (let i = 0; i < STOPS.length - 1; i++) {
-    if (f <= STOPS[i + 1][0]) { lo = STOPS[i]; hi = STOPS[i + 1]; break; }
+export function coldColor(f) {
+  for (let i = 0; i < RAMP.length - 1; i++) {
+    const [a, ca] = RAMP[i]; const [b, cb] = RAMP[i + 1];
+    if (f <= b) { const t = Math.max(0, (f - a) / (b - a)); return ca.map((x, j) => Math.round(x + (cb[j] - x) * t)); }
   }
-  const t = (Math.min(f, 100) - lo[0]) / (hi[0] - lo[0]);
-  const mix = (a, b) => Math.round(a + (b - a) * t);
-  const alpha = lo[2] + (hi[2] - lo[2]) * t;
-  return [mix(lo[1][0], hi[1][0]), mix(lo[1][1], hi[1][1]), mix(lo[1][2], hi[1][2]), Math.round(255 * alpha * (eligible ? 1 : 0.25))];
+  return RAMP[RAMP.length - 1][1];
 }
 
-export const coldHeight = (f, eligible) => (eligible && f >= 55 ? ((f / 100) ** 3) * 600 : 0);
-
-export function createMap({ style, cells, reduced }) {
+export function createMap({ style, cells, reduced, onHover }) {
   const map = new maplibregl.Map({
-    container: 'map', style, center: [2.3433, 48.8566], zoom: 11.6, pitch: 52, bearing: -18,
+    container: 'map', style, center: [2.3433, 48.8566], zoom: 11.7, pitch: 38, bearing: -14,
     maxBounds: [[2.10, 48.74], [2.58, 48.97]], attributionControl: { compact: true },
   });
   const overlay = new deck.MapboxOverlay({ interleaved: false, layers: [] });
   map.addControl(overlay);
-  const rows = cells.poly.map((poly, i) => ({ poly, rgba: [0, 0, 0, 0], elev: 0, i }));
-  let stamp = 0;
-  let marks = [];
+  const rows = cells.h.map((_, k) => ({ k, p: [cells.lon[k], cells.lat[k]], c: [0, 0, 0], v: 0, ph: (k * 2.399) % 6.283 }));
   const loaded = new Promise((res) => { map.once('load', res); setTimeout(res, 8000); });
+  let stamp = 0; let t = 0; let focus = -1; let marks = [];
 
   function draw() {
-    stamp += 1;
-    const layers = [new deck.PolygonLayer({
-      id: 'cold', data: rows, getPolygon: (d) => d.poly, getFillColor: (d) => d.rgba, getElevation: (d) => d.elev,
-      extruded: true, stroked: false, pickable: false, material: false,
-      updateTriggers: { getFillColor: [stamp], getElevation: [stamp] },
-      transitions: reduced ? {} : { getFillColor: 300, getElevation: 300 },
-    })];
+    const breath = (d) => (reduced ? 1 : 1 + 0.12 * Math.sin(t * 0.0012 + d.ph));
+    const layers = LAYERS.map(([id, r, a, minV, maxPx]) => new deck.ScatterplotLayer({
+      id, data: rows, getPosition: (d) => d.p, radiusUnits: 'meters', radiusMaxPixels: maxPx, parameters: ADD,
+      pickable: id === 'halo', onHover: id === 'halo' ? onHover : undefined,
+      onClick: id === 'halo' ? (i) => i.object && api.fly(i.object.k) : undefined,
+      getRadius: (d) => (d.v < minV ? 0 : r * (0.35 + d.v) * breath(d)),
+      getFillColor: (d) => [...d.c, d.v < minV ? 0 : Math.round(255 * a * d.v)],
+      updateTriggers: { getRadius: [stamp, t], getFillColor: [stamp] },
+    }));
+    if (focus >= 0) {
+      layers.push(new deck.ScatterplotLayer({ id: 'focus', data: [rows[focus]], getPosition: (d) => d.p, getRadius: 260,
+        radiusUnits: 'meters', filled: false, stroked: true, getLineColor: [255, 255, 255, 220], lineWidthMinPixels: 1 }));
+    }
     if (marks.length) {
-      layers.push(new deck.ScatterplotLayer({
-        id: 'events', data: marks, getPosition: (d) => [d.lon, d.lat], getRadius: 300, radiusUnits: 'meters',
-        stroked: true, filled: false, getLineColor: [95, 243, 255, 200], lineWidthMinPixels: 1, pickable: false,
-      }));
+      layers.push(new deck.ScatterplotLayer({ id: 'events', data: marks, getPosition: (d) => [d.lon, d.lat], getRadius: 300,
+        radiusUnits: 'meters', stroked: true, filled: false, getLineColor: [201, 164, 106, 200], lineWidthMinPixels: 1 }));
     }
     overlay.setProps({ layers });
   }
 
-  return {
+  // lent souffle des lumières, limité à ~6 images/s ; coupé si mouvement réduit ou onglet caché
+  if (!reduced) {
+    let last = 0;
+    const loop = (now) => {
+      if (now - last > 160 && !document.hidden) { t = now; last = now; draw(); }
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+
+  const api = {
     map, loaded,
     update(frame, events = []) {
       marks = events;
+      // lumière relative : seul le tiers le plus froid de l'heure brille vraiment
+      const lv = [];
+      for (let k = 0; k < rows.length; k++) if (frame.ok[k] && frame.cold[k] >= 55) lv.push(frame.cold[k]);
+      lv.sort((a, b) => a - b);
+      const lo = lv.length ? lv[Math.floor(lv.length * 0.66)] - 4 : 55;
+      const hi = lv.length ? lv[lv.length - 1] : 100;
       for (const r of rows) {
-        const ok = frame.ok[r.i] === 1;
-        r.rgba = coldColor(frame.cold[r.i], ok);
-        r.elev = coldHeight(frame.cold[r.i], ok);
+        const c = frame.cold[r.k]; const ok = frame.ok[r.k] === 1 && c >= 55;
+        const x = ok ? Math.max(0, (c - lo) / (hi - lo || 1)) : 0;
+        r.v = ok ? 0.04 + 0.96 * x * x : 0; r.c = coldColor(c);
       }
-      draw();
+      stamp += 1; draw();
+      return lv.length;
     },
-    fly(lat, lon) { map.flyTo({ center: [lon, lat], zoom: 15.2, speed: reduced ? 100 : 1.2 }); },
+    fly(k) { map.flyTo({ center: rows[k].p, zoom: 14.2, pitch: 55, speed: reduced ? 100 : 0.9 }); },
+    focus(k) { focus = k; draw(); },
+    official(on) {
+      for (const l of map.getStyle().layers) if (l.id.startsWith('off-')) map.setLayoutProperty(l.id, 'visibility', on ? 'visible' : 'none');
+    },
   };
+  return api;
 }

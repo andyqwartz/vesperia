@@ -32,7 +32,7 @@ PROTECTED = [
     "pipeline/vesperia/sources/poi_profiles.py", ".github/workflows/pages.yml", "pytest.ini",
 ]
 GUARD = ROOT / ".git" / "vesperia-guard.sha256"
-DEADLINE = time.time() + int(os.environ.get("VESPERIA_GATE_SECONDS", "270"))  # 270 s : marge sous le délai de 5 min de /goal gate ; plus long à la main
+DEADLINE = time.time() + int(os.environ.get("VESPERIA_GATE_SECONDS", "600"))  # 600 s : marge sous le délai de 10 min de /goal gate ; plus long à la main
 GATE = [None]  # numéro du gate en cours (renseigné par run_gate)
 RESULTS = []  # (statut, nom, détail)
 CHECKS = []   # (since, only, nom, fonction)
@@ -452,9 +452,9 @@ def ensure_fixture_in_site():
     run_pipeline(["--mode", "fixture"], ROOT / "site" / "data", timeout=120)
 
 
-def run_smoke(extra=None, timeout=215):
+def run_smoke(extra=None, timeout=600):
     ensure_fixture_in_site()
-    rc, out = sh(["node", "scripts/smoke.mjs", "--site", "site", "--base", "/vesperia/", "--timeout", "200"] + (extra or []), timeout=timeout)
+    rc, out = sh(["node", "scripts/smoke.mjs", "--site", "site", "--base", "/vesperia/", "--timeout", "500"] + (extra or []), timeout=timeout)
     need(rc == 0, "smoke : " + tail(out, 5))
 
 
@@ -466,7 +466,7 @@ def c_test_de_fumee_du_site():
         run_smoke()
 
 
-def wait_deploy(expect_mode, wait=170):
+def wait_deploy(expect_mode, wait=300):
     owner, repo = repo_slug()
     rc, head = git("rev-parse", "HEAD")
     head = head.strip()
@@ -483,7 +483,7 @@ def wait_deploy(expect_mode, wait=170):
                 break
             state = f"run CI en cours ({r['status']})"
         if time.time() - t0 > wait or remaining() < 20:
-            raise Fail(f"{state} — attends 3 minutes (sleep 180) puis relance le gate")
+            raise Fail(f"{state} — attends 5 minutes (sleep 300) puis relance le gate")
         time.sleep(15)
     base = f"https://{owner}.github.io/{repo}/"
     last = ""

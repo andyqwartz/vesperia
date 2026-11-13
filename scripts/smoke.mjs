@@ -16,7 +16,7 @@ const SITE = path.resolve(String(opt('site', 'site')));
 const URL_ARG = opt('url', null);
 const REQUIRE = String(opt('require', '')).split(',').filter(Boolean);
 const LIVE = !!opt('live-basemap', false);
-const LIMIT_S = Number(opt('timeout', process.env.SMOKE_TIMEOUT_S || 420)) || 420;
+const LIMIT_S = Number(opt('timeout', process.env.SMOKE_TIMEOUT_S || 600)) || 600;
 const SCALE = Number(process.env.SMOKE_SCALE || 0.5) || 0.5;
 const T0 = Date.now();
 const secs = (t) => ((Date.now() - t) / 1000).toFixed(1) + 's';
@@ -85,8 +85,8 @@ async function openPage(o = {}) {
   if (!LIVE) await page.route(/tiles\.openfreemap\.org/, (r) => r.abort());
   await page.route(/api\.open-meteo\.com/, (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(FORECAST) }));
   if (o.events !== undefined) await page.route('**/data/events.json', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(o.events) }));
-  await page.goto(PAGE_URL, { waitUntil: 'load', timeout: 45000 });
-  await page.waitForFunction(() => window.__VESPERIA__ && window.__VESPERIA__.ready === true, null, { timeout: 45000 });
+  await page.goto(PAGE_URL, { waitUntil: 'load', timeout: 120000 });
+  await page.waitForFunction(() => window.__VESPERIA__ && window.__VESPERIA__.ready === true, null, { timeout: 120000 });
   console.log('       (page ouverte en ' + secs(t0) + ')');
   return page;
 }

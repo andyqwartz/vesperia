@@ -508,7 +508,7 @@ def test_rail_week_from_rows_maps_days_and_hours():
     for cat, base in (("JOHV", 10.0), ("SAHV", 5.0), ("DIJFP", 2.0), ("JOVS", 99.0)):
         for h in range(24):
             share = 0.0 if (cat == "JOHV" and h == 3) else base + h
-            rows.append({"cat_jour": cat, "trnc_horr_60": f"{h}H-{(h + 1) % 24}H", "pourc_validations": share})
+            rows.append({"cat_jour": cat, "trnc_horr_60": f"{h}H-{(h + 1) % 24}H", "pourcentage_validations": share})
     week = week_from_rows(rows)
     assert len(week) == 168
     assert week[23] == 1.0 and week[4 * 24 + 23] == 1.0 and week[3] == 0.0

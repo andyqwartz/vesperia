@@ -35,6 +35,14 @@ jobs:
         run: |
           MODE=$(cat pipeline/MODE 2>/dev/null || echo fixture)
           if [ "$MODE" = "real" ]; then python -m pytest; else python -m pytest -m phase1; fi
+      # Garde les téléchargements entre deux runs : net.cached_json réutilise tout fichier de moins de 2 jours,
+      # donc un push d'interface ne retélécharge rien ; au-delà de 2 jours (et chaque lundi), les sources sont rafraîchies.
+      - name: Cache des téléchargements
+        uses: actions/cache@v4
+        with:
+          path: pipeline/cache
+          key: vesperia-cache-${{ github.run_id }}
+          restore-keys: vesperia-cache-
       - name: Données
         run: |
           MODE=$(cat pipeline/MODE 2>/dev/null || echo fixture)

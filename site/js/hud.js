@@ -5,6 +5,12 @@ import { ABOUT } from './about.js';
 const $ = (id) => document.getElementById(id);
 const LABEL = { road: 'voirie', bike: 'vélo', rail: 'métro', poi: 'commerces' };
 const UNIT = { road: 'capteurs routiers', bike: 'compteurs vélo', rail: 'accès au réseau ferré', poi: 'lieux recensés' };
+const SHORT = {
+  road: (n) => `trafic auto · ${n} capteurs · 14 j`,
+  bike: (n) => `passages vélo · ${n} compteurs · 28 j`,
+  rail: (n) => `métro, RER, tram · ${n} accès · validations IDFM`,
+  poi: (n) => `commerces, bureaux, écoles · ${n} lieux OSM`,
+};
 const DESC = {
   road: 'Trafic automobile : débit horaire moyen des capteurs de comptage routier de la Ville, sur les 14 derniers jours.',
   bike: 'Passages de vélos : comptages horaires des compteurs vélo permanents, sur les 28 derniers jours.',
@@ -51,6 +57,7 @@ export function initHud(model, { view, meta, cells }) {
   $('days').innerHTML = DAYS.map((d) => `<span>${d}</span>`).join('');
   const nIn = Object.fromEntries((meta.sources || []).map((x) => [x.id, x.n_inputs]));
   $('weights').innerHTML = SRC.map((s) => `<label><span>${LABEL[s]}</span><output></output><input type="range" min="0" max="100" data-src="${s}">`
+    + `<small class="src">${SHORT[s](nIn[s] ? nIn[s].toLocaleString('fr-FR') : '—')}</small>`
     + `<small class="desc">${DESC[s]}${nIn[s] ? ` ${nIn[s].toLocaleString('fr-FR')} ${UNIT[s]}.` : ''}</small></label>`).join('');
   $('about').innerHTML = ABOUT;
   $('sources').innerHTML = '<p class="h">fondement</p>'
